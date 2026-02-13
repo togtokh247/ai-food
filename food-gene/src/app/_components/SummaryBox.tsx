@@ -2,7 +2,7 @@
 
 import React from "react";
 
-export function SummaryBox({ summary }: { summary: string }) {
+export const SummaryBox = ({ summary }: { summary: string }) =>{
   return (
     <div className="border-t border-gray-200 pt-6">
       <div className="flex items-center gap-2">

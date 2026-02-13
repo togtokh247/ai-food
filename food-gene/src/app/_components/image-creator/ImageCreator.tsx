@@ -4,7 +4,7 @@ import { useState } from "react";
 import { ImageCreatorInput } from "./ImageCreatorInput";
 import { ImageCreatorResult } from "./ImageCreatorResult";
 
-export function ImageCreator() {
+export const ImageCreator = () => {
   const [prompt, setPrompt] = useState("");
   const [loading, setLoading] = useState(false);
   const [imageUrl, setImageUrl] = useState<string | null>(null);

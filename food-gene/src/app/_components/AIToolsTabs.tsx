@@ -5,13 +5,13 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export type TabKey = "analysis" | "ingredients" | "creator";
 
-export function AIToolsTabs({
+export const AIToolsTabs = ({
   tab,
   onChange,
 }: {
   tab: TabKey;
   onChange: (t: TabKey) => void;
-}) {
+}) => {
   return (
     <Tabs
       value={tab}

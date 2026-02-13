@@ -8,9 +8,9 @@ type Props = {
   endpoint?: string;
 };
 
-export function IngredientRecognition({
+export const IngredientRecognition = ({
   endpoint = "/api/ai/ingredient-recognition",
-}: Props) {
+}: Props) => {
   const [text, setText] = useState("");
   const [loading, setLoading] = useState(false);
   const [ingredients, setIngredients] = useState<string[]>([]);

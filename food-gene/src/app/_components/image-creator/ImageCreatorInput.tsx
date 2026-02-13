@@ -9,12 +9,12 @@ type Props = {
   onGenerate: () => void;
 };
 
-export function ImageCreatorInput({
+export const ImageCreatorInput = ({
   prompt,
   loading,
   onChange,
   onGenerate,
-}: Props) {
+}: Props) => {
   return (
     <div className="space-y-3">
       <textarea

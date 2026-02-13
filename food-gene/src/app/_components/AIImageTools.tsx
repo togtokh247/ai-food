@@ -19,11 +19,11 @@ type Props = {
 
 type TabKey = "analysis" | "ingredients" | "creator";
 
-export function AIImageTools({
+export const AIImageTools = ({
   endpoint = "/api/ai/image-analysis",
   title = "AI tools",
   accept = "image/png,image/jpeg",
-}: Props) {
+}: Props) => {
   const [tab, setTab] = useState<TabKey>("analysis");
 
   const [file, setFile] = useState<File | null>(null);

@@ -2,7 +2,7 @@
 
 import React from "react";
 
-export function ImagePreview({ previewUrl }: { previewUrl: string }) {
+export const ImagePreview = ({ previewUrl }: { previewUrl: string }) => {
   return (
     <div className="rounded-lg border border-gray-200 bg-gray-50 p-4">
       <p className="mb-3 text-sm font-medium text-gray-700">Preview</p>

@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { Image as ImageIcon, Upload } from "lucide-react";
 
-export function ImageUploadRow({
+export const ImageUploadRow = ({
   fileName,
   accept = "image/png,image/jpeg",
   loading,
@@ -20,12 +20,11 @@ export function ImageUploadRow({
   canGenerate: boolean;
   onPickFile: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onGenerate: () => void;
-}) {
+}) => {
   const inputId = useId();
 
   return (
     <div className="grid gap-4 md:grid-cols-[1fr_auto] md:items-center">
-      {/* File picker */}
       <label
         htmlFor={inputId}
         className={cn(

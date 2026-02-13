@@ -4,7 +4,7 @@ type Props = {
   imageUrl: string | null;
 };
 
-export function ImageCreatorResult({ imageUrl }: Props) {
+export const ImageCreatorResult = ({ imageUrl }: Props) => {
   return (
     <div className="border-t border-gray-200 pt-6">
       <div className="flex items-center gap-2">

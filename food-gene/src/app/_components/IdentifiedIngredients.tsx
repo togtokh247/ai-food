@@ -8,7 +8,7 @@ type Props = {
   ingredients: string[];
 };
 
-export function IdentifiedIngredients({ ingredients }: Props) {
+export const IdentifiedIngredients = ({ ingredients }: Props) => {
   return (
     <div className="pt-6">
       <Separator className="mb-4" />
