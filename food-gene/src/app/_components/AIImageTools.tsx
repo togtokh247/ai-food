@@ -1,18 +1,23 @@
 "use client";
 
 import React, { useMemo, useState } from "react";
-import { AIToolsTabs, TabKey } from "./AIToolsTabs";
 import { ImageUploadRow } from "./ImageUploadRow";
 import { ImagePreview } from "./ImagePreview";
 import { SummaryBox } from "./SummaryBox";
 import { IngredientRecognition } from "./IngredientRecognition";
 import { ImageCreator } from "./image-creator/ImageCreator";
 
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Separator } from "@/components/ui/separator";
+
 type Props = {
   endpoint?: string;
   title?: string;
   accept?: string;
 };
+
+type TabKey = "analysis" | "ingredients" | "creator";
 
 export function AIImageTools({
   endpoint = "/api/ai/image-analysis",
@@ -63,9 +68,7 @@ export function AIImageTools({
       setSummary(data.summary ?? "No summary returned.");
     } catch (err) {
       setSummary(
-        err instanceof Error
-          ? `Error: ${err.message}`
-          : "Error: Something went wrong.",
+        err instanceof Error ? `Error: ${err.message}` : "Error: Something went wrong.",
       );
     } finally {
       setLoading(false);
@@ -73,68 +76,70 @@ export function AIImageTools({
   };
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-background">
       <div className="mx-auto max-w-5xl px-6 py-10">
-        <div className="mb-6">
-          <h1 className="text-2xl font-semibold text-gray-900">{title}</h1>
-          <p className="mt-1 text-sm text-gray-500">
-            Upload an image and generate results.
-          </p>
-        </div>
+        <Card className="shadow-sm">
+          <CardHeader>
+            <CardTitle className="text-2xl">{title}</CardTitle>
+            <CardDescription>Upload an image and generate results.</CardDescription>
+          </CardHeader>
 
-        <AIToolsTabs tab={tab} onChange={setTab} />
+          <CardContent>
+            <Tabs value={tab} onValueChange={(v) => setTab(v as TabKey)} className="w-full">
+              <TabsList className="grid w-full grid-cols-3">
+                <TabsTrigger value="analysis">Analysis</TabsTrigger>
+                <TabsTrigger value="ingredients">Ingredients</TabsTrigger>
+                <TabsTrigger value="creator">Creator</TabsTrigger>
+              </TabsList>
 
-        <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-          {tab === "analysis" && (
-            <div className="space-y-6">
-              <div>
-                <span className="text-lg font-semibold text-gray-900">
-                  Image analysis
-                </span>
-                <p className="mt-2 text-sm text-gray-500">
-                  Upload a food photo, and AI will detect the ingredients.
-                </p>
-              </div>
+              <Separator className="my-6" />
 
-              <ImageUploadRow
-                fileName={file?.name}
-                accept={accept}
-                loading={loading}
-                canGenerate={canGenerate}
-                onPickFile={onPickFile}
-                onGenerate={onGenerate}
-              />
+              <TabsContent value="analysis" className="space-y-6">
+                <div className="space-y-1">
+                  <h2 className="text-lg font-semibold">Image analysis</h2>
+                  <p className="text-sm text-muted-foreground">
+                    Upload a food photo, and AI will detect the ingredients.
+                  </p>
+                </div>
 
-              {previewUrl && <ImagePreview previewUrl={previewUrl} />}
+                <ImageUploadRow
+                  fileName={file?.name}
+                  accept={accept}
+                  loading={loading}
+                  canGenerate={canGenerate}
+                  onPickFile={onPickFile}
+                  onGenerate={onGenerate}
+                />
 
-              <SummaryBox summary={summary} />
-            </div>
-          )}
+                {previewUrl && <ImagePreview previewUrl={previewUrl} />}
 
-          {tab === "ingredients" && (
-            <div className="space-y-2">
-              <h2 className="text-lg font-semibold text-gray-900">
-                Ingredient recognition
-              </h2>
-              <p className="text-sm text-gray-500">
-                Энэ tab дээр ingredients-ийг tag/chip болгож харуулж болно.
-              </p>
-            </div>
-          )}
-          {tab === "ingredients" && <IngredientRecognition />}
-          {tab === "creator" && <ImageCreator />}
+                <SummaryBox summary={summary} />
+              </TabsContent>
 
-          {tab === "creator" && (
-            <div className="space-y-2">
-              <h2 className="text-lg font-semibold text-gray-900">
-                Image creator
-              </h2>
-              <p className="text-sm text-gray-500">
-                Энэ tab дээр text prompt-аас image үүсгэдэг UI хийж болно.
-              </p>
-            </div>
-          )}
-        </div>
+              <TabsContent value="ingredients" className="space-y-4">
+                <div className="space-y-1">
+                  <h2 className="text-lg font-semibold">Ingredient recognition</h2>
+                  <p className="text-sm text-muted-foreground">
+                    Энэ tab дээр ingredients-ийг tag/chip болгож харуулж болно.
+                  </p>
+                </div>
+
+                <IngredientRecognition />
+              </TabsContent>
+
+              <TabsContent value="creator" className="space-y-4">
+                <div className="space-y-1">
+                  <h2 className="text-lg font-semibold">Image creator</h2>
+                  <p className="text-sm text-muted-foreground">
+                    Энэ tab дээр text prompt-аас image үүсгэдэг UI хийж болно.
+                  </p>
+                </div>
+
+                <ImageCreator />
+              </TabsContent>
+            </Tabs>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

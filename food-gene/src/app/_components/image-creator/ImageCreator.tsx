@@ -14,8 +14,6 @@ export function ImageCreator() {
 
     setLoading(true);
     setImageUrl(null);
-
-    // 🔹 MOCK (backend холбохоос өмнө)
     setTimeout(() => {
       setImageUrl(
         "https://images.unsplash.com/photo-1604908177522-432e3b5a1a5d",
@@ -26,7 +24,6 @@ export function ImageCreator() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div>
         <h2 className="text-lg font-semibold text-gray-900">
           Food image creator

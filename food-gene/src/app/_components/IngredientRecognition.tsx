@@ -39,7 +39,6 @@ export function IngredientRecognition({
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div>
         <h2 className="text-lg font-semibold text-black">
           Ingredient recognition
@@ -49,7 +48,6 @@ export function IngredientRecognition({
         </p>
       </div>
 
-      {/* Input */}
       <IngredientInput
         value={text}
         loading={loading}
@@ -57,7 +55,6 @@ export function IngredientRecognition({
         onGenerate={onGenerate}
       />
 
-      {/* Result */}
       <IdentifiedIngredients ingredients={ingredients} />
     </div>
   );

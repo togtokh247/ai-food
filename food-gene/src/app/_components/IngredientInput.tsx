@@ -1,5 +1,6 @@
 "use client";
 
+import { Button } from "@/components/ui/button";
 import React from "react";
 
 type Props = {
@@ -25,14 +26,14 @@ export const IngredientInput = ({
       />
 
       <div className="flex justify-end">
-        <button
+        <Button
           onClick={onGenerate}
           disabled={!value || loading}
           className="rounded-lg bg-gray-700 px-5 py-2 text-sm font-semibold text-white hover:bg-gray-800 disabled:bg-gray-300 disabled:cursor-not-allowed"
           type="button"
         >
           {loading ? "Generating..." : "Generate"}
-        </button>
+        </Button>
       </div>
     </div>
   );

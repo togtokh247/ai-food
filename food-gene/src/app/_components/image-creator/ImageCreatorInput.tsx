@@ -1,5 +1,7 @@
 "use client";
 
+import { Button } from "@/components/ui/button";
+
 type Props = {
   prompt: string;
   loading: boolean;
@@ -23,7 +25,7 @@ export function ImageCreatorInput({
       />
 
       <div className="flex justify-end">
-        <button
+        <Button
           onClick={onGenerate}
           disabled={!prompt || loading}
           className="
@@ -34,7 +36,7 @@ export function ImageCreatorInput({
           "
         >
           {loading ? "Generating..." : "Generate"}
-        </button>
+        </Button>
       </div>
     </div>
   );
