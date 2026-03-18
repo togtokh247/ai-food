@@ -10,6 +10,16 @@ const client = new OpenAI({
 
 export async function POST(req: NextRequest) {
   try {
+    if (!process.env.GROQ_API_KEY) {
+      return NextResponse.json(
+        {
+          error:
+            "GROQ_API_KEY is missing. Add it to .env.local to enable chat responses.",
+        },
+        { status: 500 },
+      );
+    }
+
     const { messages } = await req.json();
 
     if (!messages || messages.length === 0) {
