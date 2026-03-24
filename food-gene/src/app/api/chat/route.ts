@@ -3,29 +3,30 @@ import OpenAI from "openai";
 
 export const runtime = "nodejs";
 
-const client = new OpenAI({
-  apiKey: process.env.GROQ_API_KEY,
-  baseURL: "https://api.groq.com/openai/v1",
-});
+const getClient = () => {
+  const apiKey = process.env.GROQ_API_KEY;
+
+  if (!apiKey) {
+    throw new Error(
+      "GROQ_API_KEY is missing. Add it to .env.local to enable chat responses.",
+    );
+  }
+
+  return new OpenAI({
+    apiKey,
+    baseURL: "https://api.groq.com/openai/v1",
+  });
+};
 
 export async function POST(req: NextRequest) {
   try {
-    if (!process.env.GROQ_API_KEY) {
-      return NextResponse.json(
-        {
-          error:
-            "GROQ_API_KEY is missing. Add it to .env.local to enable chat responses.",
-        },
-        { status: 500 },
-      );
-    }
-
     const { messages } = await req.json();
 
     if (!messages || messages.length === 0) {
       return NextResponse.json({ error: "No messages" }, { status: 400 });
     }
 
+    const client = getClient();
     const completion = await client.chat.completions.create({
       model: "llama-3.1-8b-instant",
       messages: [
@@ -43,11 +44,7 @@ export async function POST(req: NextRequest) {
     });
   } catch (error: unknown) {
     console.error(error);
-    const message =
-      error instanceof Error ? error.message : "Server error";
-    return NextResponse.json(
-      { error: message },
-      { status: 500 }
-    );
+    const message = error instanceof Error ? error.message : "Server error";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }
