@@ -1,47 +1,10 @@
-import { NextRequest, NextResponse } from "next/server";
+import { Buffer } from "node:buffer";
 
-import { getGeminiClient } from "@/lib/gemini";
+import { NextRequest, NextResponse } from "next/server";
 
 export const runtime = "nodejs";
 
-const toDataUrl = (mimeType: string, base64Data: string) =>
-  `data:${mimeType};base64,${base64Data}`;
-
-const createFallbackImage = (prompt: string) => {
-  const safePrompt = prompt.trim() || "Food concept";
-  const title = safePrompt.slice(0, 42).replace(/[<&>]/g, "");
-  const subtitle = safePrompt.slice(42, 92).replace(/[<&>]/g, "");
-  const svg = `
-    <svg xmlns="http://www.w3.org/2000/svg" width="1024" height="768" viewBox="0 0 1024 768">
-      <defs>
-        <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stop-color="#fff3d6" />
-          <stop offset="45%" stop-color="#ffbe7a" />
-          <stop offset="100%" stop-color="#c85a3d" />
-        </linearGradient>
-      </defs>
-      <rect width="1024" height="768" fill="url(#bg)" rx="32" />
-      <circle cx="172" cy="154" r="96" fill="#fff9ef" fill-opacity="0.45" />
-      <circle cx="842" cy="140" r="128" fill="#7f3220" fill-opacity="0.16" />
-      <circle cx="832" cy="614" r="148" fill="#fff0db" fill-opacity="0.24" />
-      <rect x="86" y="98" width="852" height="572" rx="40" fill="#fffaf4" fill-opacity="0.86" />
-      <text x="126" y="230" fill="#884027" font-size="38" font-family="Segoe UI, Arial, sans-serif" font-weight="700">
-        AI Food Preview
-      </text>
-      <text x="126" y="322" fill="#3d2419" font-size="56" font-family="Segoe UI, Arial, sans-serif" font-weight="700">
-        ${title || "Food concept"}
-      </text>
-      <text x="126" y="392" fill="#5a4034" font-size="28" font-family="Segoe UI, Arial, sans-serif">
-        ${subtitle || "Preview shown because live image generation is unavailable on this plan."}
-      </text>
-      <text x="126" y="510" fill="#8d5f47" font-size="24" font-family="Segoe UI, Arial, sans-serif">
-        Gemini image generation needs a paid plan, so this is a local demo preview.
-      </text>
-    </svg>
-  `;
-
-  return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
-};
+const DEFAULT_HF_MODEL = "stabilityai/stable-diffusion-xl-base-1.0";
 
 const getErrorMessage = (error: unknown) => {
   if (error instanceof Error) {
@@ -49,6 +12,37 @@ const getErrorMessage = (error: unknown) => {
   }
 
   return "Failed to generate image.";
+};
+
+const toDataUrl = (mimeType: string, base64Data: string) =>
+  `data:${mimeType};base64,${base64Data}`;
+
+const buildFoodPrompt = (prompt: string) =>
+  [
+    "A single plated food photograph.",
+    "Photorealistic professional food photography.",
+    "One dish only, centered composition.",
+    "Close-up hero shot with natural lighting, shallow depth of field.",
+    "Highly detailed textures, realistic colors, clean background.",
+    "No collage, no grid, no split panels, no multiple copies, no text, no watermark.",
+    `Dish: ${prompt.trim()}.`,
+  ].join(" ");
+
+const getHuggingFaceConfig = () => {
+  const apiKey = process.env.HUGGINGFACE_API_KEY;
+
+  if (!apiKey) {
+    throw new Error(
+      "HUGGINGFACE_API_KEY is missing. Add it to .env.local to enable image generation.",
+    );
+  }
+
+  const model = process.env.HUGGINGFACE_MODEL?.trim() || DEFAULT_HF_MODEL;
+  const endpoint =
+    process.env.HUGGINGFACE_API_URL?.trim() ||
+    `https://router.huggingface.co/hf-inference/models/${model}`;
+
+  return { apiKey, endpoint, model };
 };
 
 export async function POST(req: NextRequest) {
@@ -62,49 +56,76 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const ai = getGeminiClient();
-    const response = await ai.models.generateImages({
-      model: "imagen-4.0-generate-001",
-      prompt: prompt.trim(),
-      config: {
-        numberOfImages: 1,
-        aspectRatio: "4:3",
-        outputMimeType: "image/png",
+    const { apiKey, endpoint, model } = getHuggingFaceConfig();
+    const response = await fetch(endpoint, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+        Accept: "image/png",
       },
+      body: JSON.stringify({
+        inputs: buildFoodPrompt(prompt),
+        parameters: {
+          negative_prompt:
+            "collage, grid, diptych, triptych, multiple burgers, repeated objects, split screen, tiles, mosaic, text, watermark, logo",
+          width: 1024,
+          height: 768,
+          num_inference_steps: 35,
+          guidance_scale: 8,
+        },
+        options: {
+          wait_for_model: true,
+          use_cache: false,
+        },
+      }),
     });
 
-    const image = response.generatedImages?.[0]?.image;
-    const imageBytes = image?.imageBytes;
-    const mimeType = image?.mimeType ?? "image/png";
+    const contentType = response.headers.get("content-type") ?? "";
 
-    if (!imageBytes) {
+    if (!response.ok) {
+      let details = `Hugging Face request failed with status ${response.status}.`;
+
+      if (contentType.includes("application/json")) {
+        const payload = (await response.json()) as {
+          error?: string;
+          estimated_time?: number;
+        };
+
+        if (payload.error) {
+          details = payload.error;
+        } else if (typeof payload.estimated_time === "number") {
+          details = `Model is loading. Try again in about ${Math.ceil(payload.estimated_time)} seconds.`;
+        }
+      } else {
+        const text = await response.text();
+
+        if (text.trim()) {
+          details = text.trim();
+        }
+      }
+
+      return NextResponse.json({ error: details }, { status: response.status });
+    }
+
+    const imageBuffer = Buffer.from(await response.arrayBuffer());
+    const mimeType = contentType || "image/png";
+
+    if (!imageBuffer.length) {
       return NextResponse.json(
-        { error: "Gemini did not return an image for this prompt." },
+        { error: "Hugging Face returned an empty image response." },
         { status: 502 },
       );
     }
 
     return NextResponse.json({
-      imageUrl: toDataUrl(mimeType, imageBytes),
+      imageUrl: toDataUrl(mimeType, imageBuffer.toString("base64")),
       isFallback: false,
+      model,
     });
   } catch (error: unknown) {
-    console.error(error);
     const message = getErrorMessage(error);
-    const needsPaidPlan =
-      message.toLowerCase().includes("paid plans") ||
-      message.toLowerCase().includes("only available on paid plans") ||
-      message.toLowerCase().includes("imagen 3");
-
-    if (needsPaidPlan) {
-      return NextResponse.json({
-        imageUrl: createFallbackImage(prompt ?? ""),
-        isFallback: true,
-        message:
-          "Live Gemini image generation needs a paid Google AI plan. Showing a local demo preview instead.",
-      });
-    }
-
+    console.error(error);
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }
