@@ -1,0 +1,13 @@
+{
+  "name": "ai-food-workspace",
+  "private": true,
+  "workspaces": [
+    "food-gene"
+  ],
+  "scripts": {
+    "dev": "npm run dev --workspace food-gene",
+    "build": "npm run build --workspace food-gene",
+    "lint": "npm run lint --workspace food-gene",
+    "start": "npm run start --workspace food-gene"
+  }
+}
