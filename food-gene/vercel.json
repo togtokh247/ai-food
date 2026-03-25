@@ -1,0 +1,6 @@
+{
+  "buildCommand": "npm run build --workspace food-gene",
+  "outputDirectory": "food-gene/.next",
+  "installCommand": "npm install",
+  "framework": "nextjs"
+}
