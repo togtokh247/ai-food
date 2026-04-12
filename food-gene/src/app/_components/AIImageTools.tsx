@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo, useRef, useState, useEffect } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 
 import { ImageUploadRow } from "./ImageUploadRow";
 import { ImagePreview } from "./ImagePreview";
@@ -21,19 +21,15 @@ import { Button } from "@/components/ui/button";
 import { RotateCw } from "lucide-react";
 
 type Props = {
+  endpoint?: string;
   title?: string;
   accept?: string;
 };
 
 type TabKey = "analysis" | "ingredients" | "creator";
-type ImageCaptionResult = { generated_text?: string };
-type ImageCaptionPipeline = (input: string) => Promise<ImageCaptionResult[]>;
-type CreateImageCaptionPipeline = (
-  task: "image-to-text",
-  model: string,
-) => Promise<ImageCaptionPipeline>;
 
 export const AIImageTools = ({
+  endpoint = "/api/image-analysis",
   title = "AI tools",
   accept = "image/png,image/jpeg",
 }: Props) => {
@@ -43,10 +39,7 @@ export const AIImageTools = ({
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
   const [loading, setLoading] = useState(false);
-  const [modelLoading, setModelLoading] = useState(false);
   const [summary, setSummary] = useState<string>("");
-
-  const captionerRef = useRef<ImageCaptionPipeline | null>(null);
 
   const canGenerate = useMemo(() => !!file && !loading, [file, loading]);
 
@@ -84,37 +77,38 @@ export const AIImageTools = ({
   };
 
   const onGenerate = async () => {
-    if (!previewUrl) return;
+    if (!file) return;
 
     setLoading(true);
     setSummary("");
 
     try {
-      if (!captionerRef.current) {
-        setModelLoading(true);
-        const { pipeline } = await import("@huggingface/transformers");
-        const createPipeline = pipeline as unknown as CreateImageCaptionPipeline;
+      const formData = new FormData();
+      formData.append("image", file);
 
-        captionerRef.current = await createPipeline(
-          "image-to-text",
-          "Xenova/vit-gpt2-image-captioning",
-        );
-        setModelLoading(false);
+      const response = await fetch(endpoint, {
+        method: "POST",
+        body: formData,
+      });
+
+      const data = (await response.json()) as {
+        summary?: string;
+        error?: string;
+      };
+
+      if (!response.ok) {
+        throw new Error(data.error ?? "Image analysis failed.");
       }
 
-      const output = await captionerRef.current(previewUrl);
-
-      if (Array.isArray(output) && output.length > 0) {
-        const caption = (output[0] as { generated_text: string }).generated_text;
-        setSummary(caption || "No summary returned.");
-      } else {
-        setSummary("No summary returned.");
-      }
+      setSummary(data.summary ?? "No summary returned.");
     } catch (err) {
-      setSummary(err instanceof Error ? `Error: ${err.message}` : "Error: Something went wrong.");
+      setSummary(
+        err instanceof Error
+          ? `Error: ${err.message}`
+          : "Error: Something went wrong.",
+      );
     } finally {
       setLoading(false);
-      setModelLoading(false);
     }
   };
 
@@ -159,12 +153,6 @@ export const AIImageTools = ({
                   onPickFile={onPickFile}
                   onGenerate={onGenerate}
                 />
-
-                {modelLoading && (
-                  <p className="text-sm text-muted-foreground">
-                    Loading model... (first time may take a bit)
-                  </p>
-                )}
 
                 {previewUrl && <ImagePreview previewUrl={previewUrl} />}
 
