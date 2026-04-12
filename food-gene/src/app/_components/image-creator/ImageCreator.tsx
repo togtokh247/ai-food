@@ -12,6 +12,31 @@ type ImageResponse = {
   error?: string;
 };
 
+const escapeSvgText = (value: string) =>
+  value
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;");
+
+const createFallbackImage = (prompt: string) => {
+  const safePrompt = escapeSvgText(prompt).slice(0, 96);
+  const svg = `
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="768" viewBox="0 0 1024 768">
+  <rect width="1024" height="768" fill="#1f1308"/>
+  <rect x="72" y="72" width="880" height="624" rx="44" fill="#fed7aa"/>
+  <circle cx="512" cy="390" r="210" fill="#fff7ed" stroke="#9a3412" stroke-opacity="0.25" stroke-width="18"/>
+  <circle cx="438" cy="342" r="54" fill="#ef4444"/>
+  <circle cx="555" cy="335" r="48" fill="#22c55e"/>
+  <circle cx="600" cy="440" r="62" fill="#facc15"/>
+  <circle cx="460" cy="458" r="70" fill="#fb923c"/>
+  <text x="512" y="132" text-anchor="middle" fill="#7c2d12" font-family="Arial, Helvetica, sans-serif" font-size="42" font-weight="700">Food Gene Preview</text>
+  <text x="512" y="650" text-anchor="middle" fill="#431407" font-family="Arial, Helvetica, sans-serif" font-size="28" font-weight="600">${safePrompt || "Generated food image"}</text>
+</svg>`.trim();
+
+  return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
+};
+
 export const ImageCreator = () => {
   const [prompt, setPrompt] = useState("");
   const [loading, setLoading] = useState(false);
@@ -41,25 +66,22 @@ export const ImageCreator = () => {
 
       const data = (await response.json()) as ImageResponse;
 
-      if (!response.ok) {
+      if (!response.ok || !data.imageUrl) {
         throw new Error(data.error ?? "Зураг үүсгэхэд алдаа гарлаа.");
-      }
-
-      if (!data.imageUrl) {
-        throw new Error("Зураг буцааж ирсэнгүй.");
       }
 
       setImageUrl(data.imageUrl);
       setIsFallback(Boolean(data.isFallback));
-      setMessage(
-        data.message ??
-          (data.isFallback
-            ? "Demo preview зураг харуулж байна."
-            : "Зураг амжилттай үүслээ."),
-      );
+      setMessage(data.message ?? "Зураг амжилттай үүслээ.");
     } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Зураг үүсгэхэд алдаа гарлаа.",
+      const details =
+        err instanceof Error ? err.message : "Зураг үүсгэхэд алдаа гарлаа.";
+
+      setImageUrl(createFallbackImage(trimmedPrompt));
+      setIsFallback(true);
+      setError("");
+      setMessage(
+        `AI provider түр ажиллахгүй байна. Demo preview харуулж байна. (${details})`,
       );
     } finally {
       setLoading(false);

@@ -87,7 +87,7 @@ export const Chat = () => {
     <>
       <Button
         onClick={() => setIsOpen(!isOpen)}
-        className="fixed bottom-6 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-zinc-800 text-white shadow-lg transition-transform hover:scale-105 hover:bg-zinc-700"
+        className="fixed bottom-6 left-6 z-[9999] flex h-14 items-center gap-2 rounded-full bg-zinc-900 px-5 text-white shadow-2xl ring-2 ring-white transition-transform hover:scale-105 hover:bg-zinc-700"
         aria-label={isOpen ? "Close chat" : "Open chat"}
       >
         {isOpen ? (
@@ -95,10 +95,11 @@ export const Chat = () => {
         ) : (
           <MessageCircle className="h-6 w-6" />
         )}
+        <span className="text-sm font-semibold">AI Chat</span>
       </Button>
 
       {isOpen && (
-        <div className="fixed bottom-24 right-6 z-50 flex h-125 w-95 flex-col overflow-hidden rounded-xl border bg-white shadow-2xl">
+        <div className="fixed bottom-24 left-6 z-[9999] flex h-[520px] w-[380px] max-w-[calc(100vw-3rem)] flex-col overflow-hidden rounded-xl border bg-white shadow-2xl">
           <div className="flex items-center justify-between border-b bg-zinc-800 px-4 py-3 text-white">
             <div className="flex items-center gap-2">
               <MessageCircle className="h-5 w-5" />
